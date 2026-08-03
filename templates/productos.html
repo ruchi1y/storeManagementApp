@@ -8,8 +8,10 @@
     <button type="submit">Buscar</button>
 </form>
 
+<p><a href="/productos/nuevo">Nuevo producto</a></p>
+
 <table border="1">
-    <tr><th>Nombre</th><th>Tipo</th><th>Costo</th><th>Precio</th><th>Stock</th></tr>
+    <tr><th>Nombre</th><th>Tipo</th><th>Costo</th><th>Precio</th><th>Stock</th><th>Ajustar</th><th>Acciones</th></tr>
     {% for p in productos %}
     <tr>
         <td>{{ p["name"] }}</td>
@@ -17,9 +19,20 @@
         <td>{{ p["cost"] }}</td>
         <td>{{ p["price"] }}</td>
         <td>{{ p["stock"] }}</td>
+        <td>
+            <form method="post" action="/productos/{{ p['id'] }}/stock">
+                <input type="number" name="quantity" value="1" style="width:50px">
+                <select name="mov_type">
+                    <option value="entry">Entrada</option>
+                    <option value="exit">Salida</option>
+                </select>
+                <button type="submit">OK</button>
+            </form>
+        </td>
+        <td><a href="/productos/{{ p['id'] }}/editar">Editar</a></td>
     </tr>
     {% else %}
-    <tr><td colspan="5">No hay productos</td></tr>
+    <tr><td colspan="7">No hay productos</td></tr>
     {% endfor %}
 </table>
 {% endblock %}

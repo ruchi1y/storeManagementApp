@@ -41,3 +41,6 @@ def get_products(conn, q=""):
             (f"%{q}%",),
         ).fetchall()
     return conn.execute("SELECT * FROM products ORDER BY name").fetchall()
+
+def get_product(conn, product_id):
+    return conn.execute("SELECT * FROM products WHERE id = ?", (product_id,)).fetchone()
