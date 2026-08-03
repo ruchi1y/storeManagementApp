@@ -1,11 +1,12 @@
 import json
 
 def create_product(conn, name, type, cost, price):
-    conn.execute(
+    cur = conn.execute(
         "INSERT INTO products (name, type, cost, price) VALUES (?, ?, ?, ?)",
         (name, type, cost, price),
     )
     conn.commit()
+    return cur.lastrowid
 
 def update_product(conn, product_id, name, type, cost, price):
     conn.execute(
@@ -131,3 +132,10 @@ def get_closings(conn):
         item["payment_breakdown"] = json.loads(item["payment_breakdown"])
         result.append(item)
     return result
+
+def set_product_image(conn, product_id, image):
+    conn.execute(
+        "UPDATE products SET image = ? WHERE id = ?",
+        (image, product_id),
+    )
+    conn.commit()

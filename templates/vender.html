@@ -13,22 +13,26 @@
 </form>
 
 <h2>Productos</h2>
-<table border="1">
-    <tr><th>Nombre</th><th>Precio</th><th>Stock</th><th></th></tr>
+<div class="grid-productos">
     {% for p in productos %}
-    <tr>
-        <td>{{ p["name"] }}</td>
-        <td>{{ p["price"] }}</td>
-        <td>{{ p["stock"] }}</td>
-        <td>{% if p["stock"] > 0 %}
-            <button class="btn-agregar"
+    {% if p["active"] %}
+    <button class="btn-agregar card-producto"
+            {% if p["stock"] <= 0 %}disabled{% endif %}
             data-id="{{ p['id'] }}"
             data-name="{{ p['name'] }}"
-            data-price="{{ p['price'] }}">Agregar</button>{% else %}Sin stock{% endif %}
-        </td>
-    </tr>
+            data-price="{{ p['price'] }}"
+            data-stock="{{ p['stock'] }}">
+        {% if p["image"] %}
+        <img src="/static/imgs/productos/{{ p['image'] }}" alt="{{ p['name'] }}">
+        {% else %}
+        <span class="placeholder">🍬</span>
+        {% endif %}
+        <span class="nombre">{{ p["name"] }}</span>
+        <span class="precio">${{ p["price"] }}</span>
+    </button>
+    {% endif %}
     {% endfor %}
-</table>
+</div>
 
 <h2>Carrito</h2>
 <ul id="carrito"></ul>

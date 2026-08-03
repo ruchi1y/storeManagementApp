@@ -1,0 +1,39 @@
+.grid-productos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+}
+
+.card-producto {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    font: inherit;
+}
+
+.card-producto img,
+.card-producto .placeholder {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    font-size: 48px;
+}
+
+.card-producto .nombre {
+    font-weight: bold;
+}
+
+.card-producto .precio {
+    color: #d33;
+}
+
+.card-producto:disabled {
+    opacity: 0.4;
+    cursor: default;
+}

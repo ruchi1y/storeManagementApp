@@ -1,4 +1,5 @@
 import sqlite3
+import os
 
 def get_conn(db_path="store.db"):
     conn = sqlite3.connect(db_path)
@@ -8,6 +9,7 @@ def get_conn(db_path="store.db"):
 
 def init_db(db_path="store.db"):
     conn = get_conn(db_path)
+    os.makedirs("static/imgs/productos", exist_ok=True)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY,
@@ -17,7 +19,8 @@ def init_db(db_path="store.db"):
             price REAL,
             stock INTEGER DEFAULT 0,
             minimum INTEGER,
-            active INTEGER DEFAULT 1
+            active INTEGER DEFAULT 1,
+            image TEXT
         )
     """)
     conn.execute("""
@@ -65,6 +68,9 @@ def init_db(db_path="store.db"):
             value TEXT
         )
     """)
+    cols = [r["name"] for r in conn.execute("PRAGMA table_info(products)")]
+    if "image" not in cols:
+        conn.execute("ALTER TABLE products ADD COLUMN image TEXT")
     conn.commit()
     conn.close()
 

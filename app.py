@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 import db
 import store
+import os
 
 db.init_db()
 
@@ -33,13 +34,16 @@ def producto_nuevo():
     if request.method == "POST":
         conn = db.get_conn()
         try:
-            store.create_product(
+            product_id = store.create_product(
                 conn,
                 name=request.form.get("name"),
                 type=request.form.get("type"),
                 cost=float(request.form.get("cost")),
                 price=float(request.form.get("price")),
             )
+            imagen = guardar_imagen(product_id, request.files.get("image"))
+            if imagen:
+                store.set_product_image(conn, product_id, imagen)
         finally:
             conn.close()
         return redirect(url_for("productos"))
@@ -59,6 +63,15 @@ def producto_editar(product_id):
                 cost=float(request.form.get("cost")),
                 price=float(request.form.get("price")),
             )
+            imagen = guardar_imagen(product_id, request.files.get("image"))
+            if imagen:
+                vieja = producto["image"]
+                store.set_product_image(conn, product_id, imagen)
+                if vieja and vieja != imagen:
+                    try:
+                        os.remove(os.path.join("static/imgs/productos", vieja))
+                    except OSError:
+                        pass
             return redirect(url_for("productos"))
     finally:
         conn.close()
@@ -155,6 +168,15 @@ def historial():
     finally:
         conn.close()
     return render_template("historial.html", ventas=ventas, cierres=cierres)
+
+def guardar_imagen(product_id, archivo):
+    if archivo and archivo.filename:
+        ext = archivo.filename.rsplit(".", 1)[-1].lower()
+        if ext in ("png", "jpg", "jpeg", "webp"):
+            nombre = f"{product_id}.{ext}"
+            archivo.save(os.path.join("static/imgs/productos", nombre))
+            return nombre
+    return None
 
 if __name__ == "__main__":
     app.run(debug=True)

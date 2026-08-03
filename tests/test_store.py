@@ -2,16 +2,19 @@ from store import (create_product, update_product, add_stock, remove_stock, get_
                    close_cash, get_daily_summary, open_cash, get_low_stock, get_sales, get_closings)
 
 import json
+import store
 
-def test_create_product(conn):
-    create_product(conn, name="Coca", type="gaseosa", cost=1200.0, price=1500.0)
+def test_create_product_returns_id(conn):
+    pid = store.create_product(conn, "Alfajor", "golosina", 300, 400)
+    assert isinstance(pid, int)
+    assert pid > 0
 
     row = conn.execute(
-        "SELECT * FROM products WHERE name = 'Coca'"
+    "SELECT * FROM products WHERE name = 'Alfajor'"
     ).fetchone()
     assert row is not None
-    assert row["name"] == "Coca"
-    assert row["price"] == 1500.0
+    assert row["name"] == "Alfajor"
+    assert row["price"] == 400.0
 
 def test_update_product(conn):
     create_product(conn, name="Coca", type="gaseosa", cost=1200.0, price=1500.0)
@@ -219,3 +222,9 @@ def test_get_closings_returns_history(conn):
     assert cierres[0]["total"] == 1500.0
     assert cierres[0]["sales_count"] == 1
     assert cierres[0]["payment_breakdown"]["cash"] == 1500.0
+
+def test_set_product_image(conn):
+    pid = store.create_product(conn, "Alfajor", "golosina", 300, 400)
+    store.set_product_image(conn, pid, "alfajor.jpg")
+    row = store.get_product(conn, pid)
+    assert row["image"] == "alfajor.jpg"

@@ -2,12 +2,17 @@ const cart = {};
 
 document.querySelectorAll(".btn-agregar").forEach(btn => {
     btn.addEventListener("click", () => {
-        addToCart(btn.dataset.id, btn.dataset.name, btn.dataset.price);
+        addToCart(btn.dataset.id, btn.dataset.name, btn.dataset.price, Number(btn.dataset.stock));
     });
 });
 
-function addToCart(id, name, price) {
+function addToCart(id, name, price, stock) {
     id = String(id);
+    const enCarrito = cart[id] ? cart[id].quantity : 0;
+    if (enCarrito >= stock) {
+        alert("No hay más stock de " + name);
+        return;
+    }
     if (cart[id]) {
         cart[id].quantity++;
     } else {
@@ -28,6 +33,10 @@ function renderCart() {
         ul.appendChild(li);
     }
     document.getElementById("total").textContent = "$" + total;
+    document.querySelectorAll(".btn-agregar").forEach(btn => {
+    const enCarrito = cart[btn.dataset.id] ? cart[btn.dataset.id].quantity : 0;
+    btn.disabled = enCarrito >= Number(btn.dataset.stock);
+});
 }
 
 function confirmSale() {
