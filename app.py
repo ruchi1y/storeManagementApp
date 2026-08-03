@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
 import db
 import store
 
 db.init_db()
-app = Flask(__name__)
 
+app = Flask(__name__)
+app.secret_key = "123"
 
 @app.route("/")
 def inicio():
@@ -73,6 +74,41 @@ def producto_stock(product_id):
     finally:
         conn.close()
     return redirect(url_for("productos"))
+
+@app.route("/vender")
+def vender():
+    q = request.args.get("q", "")
+    conn = db.get_conn()
+    try:
+        items = store.get_products(conn, q)
+    finally:
+        conn.close()
+    return render_template("vender.html", productos=items, q=q)
+
+
+@app.route("/vender", methods=["POST"])
+def vender_confirmar():
+    product_ids = request.form.getlist("product_id")
+    quantities = request.form.getlist("quantity")
+    payment_method = request.form.get("payment_method")
+
+    items = []
+    for pid, qty in zip(product_ids, quantities):
+        if int(qty) > 0:
+            items.append((int(pid), int(qty)))
+
+    conn = db.get_conn()
+    try:
+        store.register_sale(conn, items, payment_method)
+    except ValueError as e:
+        flash(str(e))
+        return redirect(url_for("vender"))
+    finally:
+        conn.close()
+
+    flash("Venta registrada")
+    return redirect(url_for("vender"))
+
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Vender{% endblock %}
+{% block content %}
+<h1>Vender</h1>
+
+{% for m in get_flashed_messages() %}
+<p style="color: red">{{ m }}</p>
+{% endfor %}
+
+<form method="get" action="/vender">
+    <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre...">
+    <button type="submit">Buscar</button>
+</form>
+
+<h2>Productos</h2>
+<table border="1">
+    <tr><th>Nombre</th><th>Precio</th><th>Stock</th><th></th></tr>
+    {% for p in productos %}
+    <tr>
+        <td>{{ p["name"] }}</td>
+        <td>{{ p["price"] }}</td>
+        <td>{{ p["stock"] }}</td>
+        <td>{% if p["stock"] > 0 %}
+            <button class="btn-agregar"
+            data-id="{{ p['id'] }}"
+            data-name="{{ p['name'] }}"
+            data-price="{{ p['price'] }}">Agregar</button>{% else %}Sin stock{% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h2>Carrito</h2>
+<ul id="carrito"></ul>
+<p>Total: <strong id="total">$0</strong></p>
+
+<p>Medio de pago:</p>
+<label><input type="radio" name="pm" value="cash" checked> Efectivo</label>
+<label><input type="radio" name="pm" value="card"> Tarjeta</label>
+<label><input type="radio" name="pm" value="qr"> QR</label>
+
+<form id="sale-form" method="post" action="/vender"></form>
+<button onclick="confirmSale()">Confirmar venta</button>
+
+<script src="/static/app.js"></script>
+{% endblock %}
