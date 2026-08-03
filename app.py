@@ -9,8 +9,7 @@ app.secret_key = "123"
 
 @app.route("/")
 def inicio():
-    return "Hola mundo"
-
+    return redirect(url_for("vender"))
 
 @app.route("/productos")
 def productos():
@@ -38,7 +37,6 @@ def producto_nuevo():
             conn.close()
         return redirect(url_for("productos"))
     return render_template("producto_form.html", producto=None)
-
 
 @app.route("/productos/<int:product_id>/editar", methods=["GET", "POST"])
 def producto_editar(product_id):
@@ -85,7 +83,6 @@ def vender():
         conn.close()
     return render_template("vender.html", productos=items, q=q)
 
-
 @app.route("/vender", methods=["POST"])
 def vender_confirmar():
     product_ids = request.form.getlist("product_id")
@@ -99,6 +96,9 @@ def vender_confirmar():
 
     conn = db.get_conn()
     try:
+        if not store.is_cash_open(conn):
+            flash("La caja está cerrada. Abrí la caja antes de vender.")
+            return redirect(url_for("vender"))
         store.register_sale(conn, items, payment_method)
     except ValueError as e:
         flash(str(e))
@@ -109,6 +109,35 @@ def vender_confirmar():
     flash("Venta registrada")
     return redirect(url_for("vender"))
 
+@app.route("/cierre")
+def cierre():
+    conn = db.get_conn()
+    try:
+        summary = store.get_daily_summary(conn)
+        abierta = store.is_cash_open(conn)
+    finally:
+        conn.close()
+    return render_template("cierre.html", summary=summary, abierta=abierta)
+
+@app.route("/cierre/cerrar", methods=["POST"])
+def cierre_cerrar():
+    conn = db.get_conn()
+    try:
+        store.close_cash(conn)
+    finally:
+        conn.close()
+    flash("Caja cerrada. Resumen del día guardado.")
+    return redirect(url_for("cierre"))
+
+@app.route("/cierre/abrir", methods=["POST"])
+def cierre_abrir():
+    conn = db.get_conn()
+    try:
+        store.open_cash(conn)
+    finally:
+        conn.close()
+    flash("Caja abierta.")
+    return redirect(url_for("cierre"))
 
 if __name__ == "__main__":
     app.run(debug=True)
