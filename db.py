@@ -15,7 +15,7 @@ def init_db(db_path="store.db"):
             type TEXT,
             cost REAL,
             price REAL,
-            stock INTEGER,
+            stock INTEGER DEFAULT 0,
             minimum INTEGER,
             active INTEGER DEFAULT 1
         )
