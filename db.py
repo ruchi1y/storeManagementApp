@@ -59,6 +59,12 @@ def init_db(db_path="store.db"):
             payment_breakdown TEXT
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )
+    """)
     conn.commit()
     conn.close()
 

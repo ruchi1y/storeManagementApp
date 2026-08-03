@@ -1,4 +1,6 @@
-from store import create_product, update_product, add_stock, remove_stock, get_products, get_product, register_sale
+from store import create_product, update_product, add_stock, remove_stock, get_products, get_product, register_sale, is_cash_open, close_cash, get_daily_summary, open_cash
+
+import json
 
 def test_create_product(conn):
     create_product(conn, name="Coca", type="gaseosa", cost=1200.0, price=1500.0)
@@ -124,3 +126,50 @@ def test_register_sale_insufficient_stock_rolls_back(conn):
     agua = conn.execute("SELECT * FROM products WHERE id = ?", (agua_id,)).fetchone()
     assert coca["stock"] == 10
     assert agua["stock"] == 2
+
+def test_is_cash_open_default(conn):
+    assert is_cash_open(conn) is True
+
+def test_close_cash_saves_summary(conn):
+    create_product(conn, name="Coca", type="gaseosa", cost=1200.0, price=1500.0)
+    coca_id = conn.execute("SELECT id FROM products WHERE name='Coca'").fetchone()["id"]
+    add_stock(conn, coca_id, quantity=10)
+
+    register_sale(conn, items=[(coca_id, 2)], payment_method="cash")
+    register_sale(conn, items=[(coca_id, 1)], payment_method="card")
+
+    close_cash(conn)
+
+    row = conn.execute("SELECT * FROM closings").fetchone()
+    assert row is not None
+    assert row["total"] == 2 * 1500.0 + 1 * 1500.0
+    assert row["sales_count"] == 2
+
+    breakdown = json.loads(row["payment_breakdown"])
+    assert breakdown["cash"] == 2 * 1500.0
+    assert breakdown["card"] == 1 * 1500.0
+    assert breakdown["qr"] == 0
+
+def test_daily_summary_ignores_old_sales(conn):
+    create_product(conn, name="Coca", type="gaseosa", cost=1200.0, price=1500.0)
+    coca_id = conn.execute("SELECT id FROM products WHERE name='Coca'").fetchone()["id"]
+    add_stock(conn, coca_id, quantity=10)
+
+    register_sale(conn, items=[(coca_id, 1)], payment_method="cash")
+
+    conn.execute(
+        "INSERT INTO sales (created_at, total, payment_method) "
+        "VALUES (datetime('now', '-1 day'), 5000.0, 'card')"
+    )
+    conn.commit()
+
+    summary = get_daily_summary(conn)
+    assert summary["sales_count"] == 1
+    assert summary["total"] == 1500.0
+    assert summary["breakdown"]["card"] == 0
+
+def test_open_cash_reopens(conn):
+    close_cash(conn)
+    assert is_cash_open(conn) is False
+    open_cash(conn)
+    assert is_cash_open(conn) is True

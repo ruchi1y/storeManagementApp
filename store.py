@@ -1,3 +1,5 @@
+import json
+
 def create_product(conn, name, type, cost, price):
     conn.execute(
         "INSERT INTO products (name, type, cost, price) VALUES (?, ?, ?, ?)",
@@ -74,3 +76,39 @@ def register_sale(conn, items, payment_method):
                 "INSERT INTO movements (product_id, type, quantity, reason) VALUES (?, 'exit', ?, ?)",
                 (product_id, quantity, "venta"),
             )
+
+def is_cash_open(conn):
+    row = conn.execute("SELECT value FROM settings WHERE key = 'cash_open'").fetchone()
+    return row is None or row["value"] == "1"
+
+def get_daily_summary(conn):
+    row = conn.execute(
+        "SELECT COUNT(*) AS sales_count, COALESCE(SUM(total), 0) AS total "
+        "FROM sales WHERE date(created_at) = date('now')"
+    ).fetchone()
+    breakdown = {"cash": 0.0, "card": 0.0, "qr": 0.0}
+    for r in conn.execute(
+        "SELECT payment_method, SUM(total) AS subtotal FROM sales "
+        "WHERE date(created_at) = date('now') GROUP BY payment_method"
+    ).fetchall():
+        breakdown[r["payment_method"]] = r["subtotal"]
+    return {
+        "total": row["total"],
+        "sales_count": row["sales_count"],
+        "breakdown": breakdown,
+    }
+
+def close_cash(conn):
+    summary = get_daily_summary(conn)
+    conn.execute(
+        "INSERT INTO closings (total, sales_count, payment_breakdown) VALUES (?, ?, ?)",
+        (summary["total"], summary["sales_count"], json.dumps(summary["breakdown"])),
+    )
+    conn.execute(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES ('cash_open', '0')"
+    )
+    conn.commit()
+
+def open_cash(conn):
+    conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('cash_open', '1')")
+    conn.commit()
