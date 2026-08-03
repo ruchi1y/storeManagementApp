@@ -112,3 +112,22 @@ def close_cash(conn):
 def open_cash(conn):
     conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('cash_open', '1')")
     conn.commit()
+
+def get_low_stock(conn):
+    return conn.execute(
+        "SELECT * FROM products WHERE stock <= minimum ORDER BY name"
+    ).fetchall()
+
+def get_sales(conn):
+    return conn.execute(
+        "SELECT * FROM sales ORDER BY id DESC"
+    ).fetchall()
+
+def get_closings(conn):
+    rows = conn.execute("SELECT * FROM closings ORDER BY id DESC").fetchall()
+    result = []
+    for r in rows:
+        item = dict(r)
+        item["payment_breakdown"] = json.loads(item["payment_breakdown"])
+        result.append(item)
+    return result
