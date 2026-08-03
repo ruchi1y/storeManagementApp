@@ -1,4 +1,4 @@
-from store import create_product, update_product, add_stock, remove_stock
+from store import create_product, update_product, add_stock, remove_stock, get_products
 
 def test_create_product(conn):
     create_product(conn, name="Coca", type="gaseosa", cost=1200.0, price=1500.0)
@@ -50,3 +50,11 @@ def test_remove_stock(conn):
     ).fetchone()
     assert mov is not None
     assert mov["quantity"] == 3
+    
+def test_get_products_with_search(conn):
+    create_product(conn, name="Coca", type="gaseosa", cost=1200.0, price=1500.0)
+    create_product(conn, name="Agua", type="gaseosa", cost=500.0, price=800.0)
+
+    results = get_products(conn, q="co")
+    names = [p["name"] for p in results]
+    assert names == ["Coca"]

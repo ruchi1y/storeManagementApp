@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Kiosco{% endblock %}</title>
+</head>
+<body>
+    <nav>
+        <a href="/">Inicio</a> |
+        <a href="/productos">Productos</a>
+    </nav>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

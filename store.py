@@ -33,3 +33,11 @@ def remove_stock(conn, product_id, quantity, reason="venta"):
         (product_id, quantity, reason),
     )
     conn.commit()
+
+def get_products(conn, q=""):
+    if q:
+        return conn.execute(
+            "SELECT * FROM products WHERE name LIKE ? ORDER BY name",
+            (f"%{q}%",),
+        ).fetchall()
+    return conn.execute("SELECT * FROM products ORDER BY name").fetchall()
