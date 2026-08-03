@@ -9,7 +9,14 @@ app.secret_key = "123"
 
 @app.route("/")
 def inicio():
-    return redirect(url_for("vender"))
+    conn = db.get_conn()
+    try:
+        summary = store.get_daily_summary(conn)
+        abierta = store.is_cash_open(conn)
+        bajos = store.get_low_stock(conn)
+    finally:
+        conn.close()
+    return render_template("index.html", summary=summary, abierta=abierta, bajos=bajos)
 
 @app.route("/productos")
 def productos():
@@ -138,6 +145,16 @@ def cierre_abrir():
         conn.close()
     flash("Caja abierta.")
     return redirect(url_for("cierre"))
+
+@app.route("/historial")
+def historial():
+    conn = db.get_conn()
+    try:
+        ventas = store.get_sales(conn)
+        cierres = store.get_closings(conn)
+    finally:
+        conn.close()
+    return render_template("historial.html", ventas=ventas, cierres=cierres)
 
 if __name__ == "__main__":
     app.run(debug=True)

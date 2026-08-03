@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Panel{% endblock %}
+{% block content %}
+<h1>Kiosco</h1>
+
+{% for m in get_flashed_messages() %}
+<p style="color: red">{{ m }}</p>
+{% endfor %}
+
+<p><strong>Estado:</strong>
+    {% if abierta %}Caja ABIERTA{% else %}Caja CERRADA{% endif %}
+    · <a href="/cierre">ir al cierre</a>
+</p>
+
+<h2>Resumen del día</h2>
+<p>Ventas: {{ summary["sales_count"] }}</p>
+<p>Total: ${{ summary["total"] }}</p>
+<ul>
+    <li>Efectivo: ${{ summary["breakdown"]["cash"] }}</li>
+    <li>Tarjeta: ${{ summary["breakdown"]["card"] }}</li>
+    <li>QR: ${{ summary["breakdown"]["qr"] }}</li>
+</ul>
+
+<h2>Stock bajo</h2>
+{% if bajos %}
+<table border="1">
+    <tr><th>Nombre</th><th>Stock</th><th>Mínimo</th></tr>
+    {% for p in bajos %}
+    <tr>
+        <td>{{ p["name"] }}</td>
+        <td style="color: red">{{ p["stock"] }}</td>
+        <td>{{ p["minimum"] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>Ningún producto bajo mínimo.</p>
+{% endif %}
+
+<nav>
+    <a href="/">Inicio</a> |
+    <a href="/productos">Productos</a> |
+    <a href="/vender">Vender</a> |
+    <a href="/cierre">Cierre</a>
+</nav>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Historial{% endblock %}
+{% block content %}
+<h1>Historial</h1>
+
+<h2>Ventas</h2>
+<table border="1">
+    <tr><th>#</th><th>Fecha</th><th>Total</th><th>Medio</th></tr>
+    {% for v in ventas %}
+    <tr>
+        <td>{{ v["id"] }}</td>
+        <td>{{ v["created_at"] }}</td>
+        <td>${{ v["total"] }}</td>
+        <td>{{ v["payment_method"] }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">Sin ventas</td></tr>
+    {% endfor %}
+</table>
+
+<h2>Cierres</h2>
+<table border="1">
+    <tr><th>Fecha</th><th>Total</th><th>Ventas</th><th>Desglose</th></tr>
+    {% for c in cierres %}
+    <tr>
+        <td>{{ c["closed_at"] }}</td>
+        <td>${{ c["total"] }}</td>
+        <td>{{ c["sales_count"] }}</td>
+        <td>
+            {% for k, v in c["payment_breakdown"].items() %}
+                {{ k }}: ${{ v }}{% if not loop.last %}, {% endif %}
+            {% endfor %}
+        </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">Sin cierres</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}
