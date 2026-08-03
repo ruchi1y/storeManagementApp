@@ -1,4 +1,4 @@
-from store import create_product, update_product, add_stock, remove_stock, get_products, get_product
+from store import create_product, update_product, add_stock, remove_stock, get_products, get_product, register_sale
 
 def test_create_product(conn):
     create_product(conn, name="Coca", type="gaseosa", cost=1200.0, price=1500.0)
@@ -66,3 +66,61 @@ def test_get_product(conn):
     p = get_product(conn, pid)
 
     assert p["name"] == "Coca"
+
+def test_register_sale_creates_sale_and_items(conn):
+    create_product(conn, name="Coca", type="gaseosa", cost=1200.0, price=1500.0)
+    create_product(conn, name="Agua", type="gaseosa", cost=500.0, price=800.0)
+    coca_id = conn.execute("SELECT id FROM products WHERE name='Coca'").fetchone()["id"]
+    agua_id = conn.execute("SELECT id FROM products WHERE name='Agua'").fetchone()["id"]
+    add_stock(conn, coca_id, quantity=10)
+    add_stock(conn, agua_id, quantity=10)
+
+    register_sale(conn, items=[(coca_id, 2), (agua_id, 1)], payment_method="cash")
+
+    sale = conn.execute("SELECT * FROM sales").fetchone()
+    assert sale is not None
+    assert sale["total"] == 2 * 1500.0 + 1 * 800.0
+    assert sale["payment_method"] == "cash"
+
+    items = conn.execute("SELECT * FROM sale_items").fetchall()
+    assert len(items) == 2
+
+def test_register_sale_decrements_stock(conn):
+    create_product(conn, name="Coca", type="gaseosa", cost=1200.0, price=1500.0)
+    coca_id = conn.execute("SELECT id FROM products WHERE name='Coca'").fetchone()["id"]
+    add_stock(conn, coca_id, quantity=10)
+
+    register_sale(conn, items=[(coca_id, 2)], payment_method="cash")
+
+    row = conn.execute("SELECT * FROM products WHERE id = ?", (coca_id,)).fetchone()
+    assert row["stock"] == 8
+
+    mov = conn.execute(
+        "SELECT * FROM movements WHERE product_id = ? AND type='exit'",
+        (coca_id,),
+    ).fetchone()
+    assert mov is not None
+    assert mov["quantity"] == 2
+    assert mov["reason"] == "venta"
+
+def test_register_sale_insufficient_stock_rolls_back(conn):
+    create_product(conn, name="Coca", type="gaseosa", cost=1200.0, price=1500.0)
+    create_product(conn, name="Agua", type="gaseosa", cost=500.0, price=800.0)
+    coca_id = conn.execute("SELECT id FROM products WHERE name='Coca'").fetchone()["id"]
+    agua_id = conn.execute("SELECT id FROM products WHERE name='Agua'").fetchone()["id"]
+    add_stock(conn, coca_id, quantity=10)
+    add_stock(conn, agua_id, quantity=2)
+
+    try:
+        register_sale(conn, items=[(coca_id, 5), (agua_id, 3)], payment_method="cash")
+        assert False, "debería haber fallado por stock insuficiente"
+    except ValueError:
+        pass
+
+    assert conn.execute("SELECT COUNT(*) AS n FROM sales").fetchone()["n"] == 0
+    assert conn.execute("SELECT COUNT(*) AS n FROM sale_items").fetchone()["n"] == 0
+
+    coca = conn.execute("SELECT * FROM products WHERE id = ?", (coca_id,)).fetchone()
+    agua = conn.execute("SELECT * FROM products WHERE id = ?", (agua_id,)).fetchone()
+    assert coca["stock"] == 10
+    assert agua["stock"] == 2
